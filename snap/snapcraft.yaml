@@ -1,0 +1,103 @@
+name: pipewire
+base: core22
+version: '0.1'
+summary: Pipewire server, plus wireplumber and pipewire-pulse
+description: |
+  The pipewire video/audio daemon server.
+
+grade: devel
+confinement: strict
+
+layout:
+  /usr/share/pipewire:
+    bind: $SNAP/usr/share/pipewire
+  /usr/lib/$CRAFT_ARCH_TRIPLET/pipewire-0.3:
+    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/pipewire-0.3
+
+environment:
+  SPA_PLUGIN_DIR: $SNAP/usr/lib/x86_64-linux-gnu/spa-0.2
+
+apps:
+  pipewire:
+    #command-chain:
+    #  - snap/command-chain/init-run-user.sh
+    command: usr/bin/pipewire
+    plugs:
+      - pipewire-server
+      - network-bind
+
+parts:
+  ninja:
+    plugin: nil
+    source: https://github.com/ninja-build/ninja.git
+    source-tag: 'v1.11.1'
+    override-build: |
+      rm -rf build
+      rm -f ninja
+      rm -f ninja_bootstrap
+      sed -i 's_^#!/usr/bin/env python$_#!/usr/bin/env python3_g' configure.py
+      ./configure.py --bootstrap
+      mv ninja ninja_bootstrap
+      rm -rf build
+      ./ninja_bootstrap
+      rm -f ninja_bootstrap
+      mkdir -p $CRAFT_PART_INSTALL/usr/bin
+      mv ninja $CRAFT_PART_INSTALL/usr/bin/
+    build-packages:
+      - python3
+
+  meson-deps:
+    after: [ ninja ]
+    plugin: nil
+    source: https://github.com/mesonbuild/meson.git
+    source-tag: '1.0.0'
+    override-build: |
+      python3 -m pip install .
+      mkdir -p $CRAFT_PART_INSTALL/usr/lib/python3/dist-packages
+      rm -rf $CRAFT_PART_INSTALL/usr/lib/python3/dist-packages/meson*
+      python3 -m pip install --target=$CRAFT_PART_INSTALL/usr .
+      mv $CRAFT_PART_INSTALL/usr/meson* $CRAFT_PART_INSTALL/usr/lib/python3/dist-packages/
+      sed -i "s%^#!/usr/bin/python3$%#!/usr/bin/env python3%g" /usr/local/bin/meson
+      sed -i "s%^#!/usr/bin/python3$%#!/usr/bin/env python3%g" $CRAFT_PART_INSTALL/usr/bin/meson
+    build-packages:
+      - python3-pip
+      - libdbus-1-dev
+
+  pipewire:
+    plugin: meson
+    after: [meson-deps]
+    source: https://gitlab.freedesktop.org/pipewire/pipewire.git
+    meson-parameters:
+      - --prefix=/usr
+      - -Doptimization=3
+      - -Ddebug=true
+      - -Dexamples=disabled
+      - -Dman=disabled
+      - -Dtests=disabled
+      - -Dsystemd=enabled
+      - -Dsnap=enabled
+    build-packages:
+      - libsdl2-dev
+      - libreadline-dev
+      - libncursesw5-dev
+      - libsndfile1-dev
+      - libpulse-dev
+      - libusb-1.0-0-dev
+      - libsystemd-dev
+      - libapparmor-dev
+      - libsnapd-glib-dev
+    override-pull: |
+      craftctl default
+      patch -p1 < $CRAFT_PROJECT_DIR/patches/add-snap-support.diff
+    stage-packages:
+      - libgsound0
+      - libcanberra-pulse
+      - libsnapd-glib1
+
+  conditioning:
+    plugin: nil
+    after: [pipewire]
+    override-prime: |
+      mkdir -p snap/command-chain
+      cp -a $CRAFT_PROJECT_DIR/scripts/* snap/command-chain/
+      craftctl default
