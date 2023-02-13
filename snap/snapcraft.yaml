@@ -11,20 +11,48 @@ confinement: strict
 layout:
   /usr/share/pipewire:
     bind: $SNAP/usr/share/pipewire
+  /usr/share/wireplumber:
+    bind: $SNAP/usr/share/wireplumber
+  /usr/share/alsa:
+    bind: $SNAP/usr/share/alsa
+  /usr/share/alsa-card-profile:
+    bind: $SNAP/usr/share/alsa-card-profile
   /usr/lib/$CRAFT_ARCH_TRIPLET/pipewire-0.3:
     symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/pipewire-0.3
+  /usr/lib/$CRAFT_ARCH_TRIPLET/wireplumber-0.4:
+    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/wireplumber-0.4
 
 environment:
   SPA_PLUGIN_DIR: $SNAP/usr/lib/x86_64-linux-gnu/spa-0.2
 
 apps:
   pipewire:
-    #command-chain:
-    #  - snap/command-chain/init-run-user.sh
-    command: usr/bin/pipewire
-    plugs:
-      - pipewire-server
-      - network-bind
+    command: snap/command-chain/pipewire
+
+plugs:
+  pipewire-server: null
+  network: null
+  bluez: null
+  hardware-observe: null
+  network-bind: null
+  audio-playback: null
+  audio-record: null
+  alsa: null
+  system-observe: null
+  snapd-control: null
+slots:
+  dbus-portal:
+    interface: dbus
+    name: org.freedesktop.impl.portal.PermissionStore
+    bus: session
+  dbus-wireplumber:
+    interface: dbus
+    name: org.freedesktop.ReserveDevice1
+    bus: session
+  dbus-pulseaudio:
+    interface: dbus
+    name: org.pulseaudio.Server
+    bus: session
 
 parts:
   ninja:
@@ -86,6 +114,7 @@ parts:
       - libsystemd-dev
       - libapparmor-dev
       - libsnapd-glib-dev
+      - libbluetooth-dev
     override-pull: |
       craftctl default
       patch -p1 < $CRAFT_PROJECT_DIR/patches/add-snap-support.diff
@@ -93,6 +122,7 @@ parts:
       - libgsound0
       - libcanberra-pulse
       - libsnapd-glib1
+      - libbluetooth3
 
   conditioning:
     plugin: nil

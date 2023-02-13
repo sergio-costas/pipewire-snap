@@ -1,0 +1,8 @@
+#!/bin/bash
+
+export PIPEWIRE_RUNTIME_DIR=/run/user/$(id -u)
+export PULSE_RUNTIME_PATH=/run/user/$(id -u)/pulse
+
+$SNAP/usr/bin/pipewire &
+$SNAP/usr/bin/wireplumber &
+$SNAP/usr/bin/pipewire-pulse
