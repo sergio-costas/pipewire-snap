@@ -463,7 +463,7 @@ index 000000000..bd700eb3f
 +                (0 == g_strcmp0 (slot_name, plug_name)))
 +                    permissions |= add_permission;
 +        }
-+        g_ptr_array_free(slots, TRUE);
++
 +    }
 +    return permissions;
 +}
