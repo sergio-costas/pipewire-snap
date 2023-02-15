@@ -28,8 +28,29 @@ environment:
   PULSE_RUNTIME_PATH: $XDG_RUNTIME_DIR/../pulse
 
 apps:
-  pipewire:
+  create-folder:
+    before: [pipewire]
     command: snap/command-chain/pipewire
+    daemon: simple
+    passthrough:
+      daemon-scope: user
+  pipewire:
+    command: usr/bin/pipewire
+    daemon: simple
+    passthrough:
+      daemon-scope: user
+  wireplumber:
+    after: [pipewire]
+    command: usr/bin/wireplumber
+    daemon: simple
+    passthrough:
+      daemon-scope: user
+  pipewire-pulse:
+    after: [wireplumber]
+    command: usr/bin/pipewire-pulse
+    daemon: simple
+    passthrough:
+      daemon-scope: user
 
 plugs:
   alsa: null
