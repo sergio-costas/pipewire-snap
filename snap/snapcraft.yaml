@@ -32,16 +32,17 @@ apps:
     command: snap/command-chain/pipewire
 
 plugs:
-  pipewire-server: null
-  network: null
-  bluez: null
-  hardware-observe: null
-  network-bind: null
+  alsa: null
   audio-playback: null
   audio-record: null
-  alsa: null
-  system-observe: null
+  bluez: null
+  hardware-observe: null
+  network: null
+  network-bind: null
+  pipewire-server: null
   snapd-control: null
+  system-observe: null
+
 slots:
   dbus-portal:
     interface: dbus

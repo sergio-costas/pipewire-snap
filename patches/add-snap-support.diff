@@ -133,21 +133,21 @@ index feca30ae1..5c797e835 100644
    ['gettid', '#include <unistd.h>', ['-D_GNU_SOURCE'], []],
    ['memfd_create', '#include <sys/mman.h>', ['-D_GNU_SOURCE'], []],
 diff --git a/meson_options.txt b/meson_options.txt
-index 99b057c52..7d2fe9aa0 100644
+index af72586b0..c6e8221f9 100644
 --- a/meson_options.txt
 +++ b/meson_options.txt
-@@ -285,3 +285,6 @@ option('compress-offload',
-        description: 'Enable ALSA Compress-Offload support',
-        type: 'feature',
-        value: 'disabled')
+@@ -318,3 +318,6 @@ option('rlimits-nice',
+        min: -20,
+        max: -1,
+        value: -19)
 +option('snap',
 +       type : 'feature', value : 'auto',
 +       description : 'Snap support is available.')
 diff --git a/src/modules/meson.build b/src/modules/meson.build
-index a3606a6cd..973124aac 100644
+index 717fbf2a6..8e4a55908 100644
 --- a/src/modules/meson.build
 +++ b/src/modules/meson.build
-@@ -265,6 +265,7 @@ pipewire_module_protocol_pulse_sources = [
+@@ -264,6 +264,7 @@ pipewire_module_protocol_pulse_sources = [
    'module-protocol-pulse/reply.c',
    'module-protocol-pulse/sample.c',
    'module-protocol-pulse/sample-play.c',
@@ -155,7 +155,7 @@ index a3606a6cd..973124aac 100644
    'module-protocol-pulse/server.c',
    'module-protocol-pulse/stream.c',
    'module-protocol-pulse/utils.c',
-@@ -295,6 +296,13 @@ pipewire_module_protocol_pulse_sources = [
+@@ -294,6 +295,13 @@ pipewire_module_protocol_pulse_sources = [
    'module-protocol-pulse/modules/module-zeroconf-discover.c',
  ]
  
@@ -319,10 +319,10 @@ index 000000000..03dee60c5
 +#endif // _SANDBOX_ACCESS_H_
 diff --git a/src/modules/module-protocol-pulse/snap-policy.c b/src/modules/module-protocol-pulse/snap-policy.c
 new file mode 100644
-index 000000000..bd700eb3f
+index 000000000..7555f94a8
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/snap-policy.c
-@@ -0,0 +1,144 @@
+@@ -0,0 +1,143 @@
 +/***
 +    This file is part of PipeWire.
 +
@@ -463,7 +463,6 @@ index 000000000..bd700eb3f
 +                (0 == g_strcmp0 (slot_name, plug_name)))
 +                    permissions |= add_permission;
 +        }
-+
 +    }
 +    return permissions;
 +}
