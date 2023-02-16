@@ -24,33 +24,35 @@ layout:
 
 environment:
   SPA_PLUGIN_DIR: $SNAP/usr/lib/x86_64-linux-gnu/spa-0.2
-  PIPEWIRE_RUNTIME_DIR: $XDG_RUNTIME_DIR/..
-  PULSE_RUNTIME_PATH: $XDG_RUNTIME_DIR/../pulse
+  #PIPEWIRE_RUNTIME_DIR: $XDG_RUNTIME_DIR/..
+  #PULSE_RUNTIME_PATH: $XDG_RUNTIME_DIR/../pulse
 
 apps:
-  create-folder:
-    before: [pipewire]
+  pipewire:
+    command: snap/command-chain/links
+    daemon: simple
+    passthrough:
+      daemon-scope: user
+
+  pipewire-server:
+    after: [ pipewire ]
     command: snap/command-chain/pipewire
     daemon: simple
     passthrough:
       daemon-scope: user
-  pipewire:
-    command: usr/bin/pipewire
-    daemon: simple
-    passthrough:
-      daemon-scope: user
-  wireplumber:
-    after: [pipewire]
-    command: usr/bin/wireplumber
-    daemon: simple
-    passthrough:
-      daemon-scope: user
+    sockets:
+      pipewire-server:
+        listen-stream: $XDG_RUNTIME_DIR/pipewire-0
+
   pipewire-pulse:
-    after: [wireplumber]
+    after: [ pipewire-server ]
     command: usr/bin/pipewire-pulse
     daemon: simple
     passthrough:
       daemon-scope: user
+    sockets:
+      pipewire-pulse:
+        listen-stream: $XDG_RUNTIME_DIR/pulse/native
 
 plugs:
   alsa: null
