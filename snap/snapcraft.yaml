@@ -25,34 +25,14 @@ layout:
 environment:
   SPA_PLUGIN_DIR: $SNAP/usr/lib/x86_64-linux-gnu/spa-0.2
   #PIPEWIRE_RUNTIME_DIR: $XDG_RUNTIME_DIR/..
-  #PULSE_RUNTIME_PATH: $XDG_RUNTIME_DIR/../pulse
+  PULSE_RUNTIME_PATH: $XDG_RUNTIME_DIR/../pulse
 
 apps:
   pipewire:
-    command: snap/command-chain/links
-    daemon: simple
-    passthrough:
-      daemon-scope: user
-
-  pipewire-server:
-    after: [ pipewire ]
     command: snap/command-chain/pipewire
     daemon: simple
     passthrough:
       daemon-scope: user
-    sockets:
-      pipewire-server:
-        listen-stream: $XDG_RUNTIME_DIR/pipewire-0
-
-  pipewire-pulse:
-    after: [ pipewire-server ]
-    command: usr/bin/pipewire-pulse
-    daemon: simple
-    passthrough:
-      daemon-scope: user
-    sockets:
-      pipewire-pulse:
-        listen-stream: $XDG_RUNTIME_DIR/pulse/native
 
 plugs:
   alsa: null
@@ -62,7 +42,7 @@ plugs:
   hardware-observe: null
   network: null
   network-bind: null
-  pipewire-server: null
+  #pipewire-server: null
   snapd-control: null
   system-observe: null
 
@@ -121,6 +101,7 @@ parts:
     plugin: meson
     after: [meson-deps]
     source: https://gitlab.freedesktop.org/pipewire/pipewire.git
+    source-tag: '0.3.66'
     meson-parameters:
       - --prefix=/usr
       - -Doptimization=3
@@ -149,6 +130,7 @@ parts:
       - libcanberra-pulse
       - libsnapd-glib1
       - libbluetooth3
+      - psmisc
 
   conditioning:
     plugin: nil

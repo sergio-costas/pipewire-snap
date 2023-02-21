@@ -1,4 +1,10 @@
 #!/bin/sh
 
+mkdir -p $XDG_RUNTIME_DIR
+
 $SNAP/usr/bin/pipewire &
-$SNAP/usr/bin/wireplumber
+$SNAP/usr/bin/wireplumber &
+$SNAP/usr/bin/pipewire-pulse
+killall $SNAP/usr/bin/pipewire
+killall $SNAP/usr/bin/wireplumber
+
