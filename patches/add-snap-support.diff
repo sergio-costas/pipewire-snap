@@ -1,15 +1,8 @@
 diff --git a/.gitlab-ci.yml b/.gitlab-ci.yml
-index 61fbfafba..cf797105b 100644
+index 88ed826c8..e0760af26 100644
 --- a/.gitlab-ci.yml
 +++ b/.gitlab-ci.yml
-@@ -77,12 +77,13 @@ include:
- .ubuntu:
-   variables:
-     # Update this tag when you want to trigger a rebuild
--    FDO_DISTRIBUTION_TAG: '2022-01-27.0'
-+    FDO_DISTRIBUTION_TAG: '2022-11-23.1'
-     FDO_DISTRIBUTION_VERSION: '20.04'
-     FDO_DISTRIBUTION_PACKAGES: >-
+@@ -83,6 +83,7 @@ include:
        debhelper-compat
        findutils
        git
@@ -17,7 +10,7 @@ index 61fbfafba..cf797105b 100644
        libasound2-dev
        libavcodec-dev
        libavfilter-dev
-@@ -93,6 +94,7 @@ include:
+@@ -94,6 +95,7 @@ include:
        libgstreamer-plugins-base1.0-dev
        libsbc-dev
        libsdl2-dev
@@ -25,7 +18,7 @@ index 61fbfafba..cf797105b 100644
        libudev-dev
        libva-dev
        libv4l-dev
-@@ -227,7 +229,7 @@ build_on_ubuntu:
+@@ -228,7 +230,7 @@ build_on_ubuntu:
      - .build
    stage: build
    variables:
@@ -34,7 +27,7 @@ index 61fbfafba..cf797105b 100644
  
  .build_on_fedora:
    extends:
-@@ -254,6 +256,7 @@ build_on_fedora:
+@@ -255,6 +257,7 @@ build_on_fedora:
          -Dsdl2=enabled
          -Dsndfile=enabled
          -Dsession-managers=[]
@@ -42,7 +35,7 @@ index 61fbfafba..cf797105b 100644
    artifacts:
      name: pipewire-$CI_COMMIT_SHA
      when: always
-@@ -269,7 +272,7 @@ build_on_alpine:
+@@ -270,7 +273,7 @@ build_on_alpine:
      - .build
    stage: build
    variables:
@@ -51,7 +44,7 @@ index 61fbfafba..cf797105b 100644
  
  # build with all auto() options enabled
  build_all:
-@@ -286,6 +289,7 @@ build_all:
+@@ -287,6 +290,7 @@ build_all:
          -Droc=disabled
          -Dlibcamera=disabled
          -Dsession-managers=[]
@@ -59,7 +52,7 @@ index 61fbfafba..cf797105b 100644
    parallel:
      matrix:
        - CC: [gcc, clang]
-@@ -295,7 +299,7 @@ build_with_no_commandline_options:
+@@ -296,7 +300,7 @@ build_with_no_commandline_options:
    extends:
      - .build_on_fedora
    variables:
@@ -68,7 +61,7 @@ index 61fbfafba..cf797105b 100644
    parallel:
      matrix:
        - CC: [gcc, clang]
-@@ -322,7 +326,7 @@ build_release:
+@@ -323,7 +327,7 @@ build_release:
    extends:
      - .build_on_fedora
    variables:
@@ -77,7 +70,7 @@ index 61fbfafba..cf797105b 100644
    parallel:
      matrix:
        - CC: [gcc, clang]
-@@ -336,7 +340,7 @@ build_session_managers:
+@@ -337,7 +341,7 @@ build_session_managers:
      - ninja $NINJA_ARGS -C "$BUILD_DIR"
      - ninja $NINJA_ARGS -C "$BUILD_DIR" install
    variables:
@@ -86,7 +79,7 @@ index 61fbfafba..cf797105b 100644
    parallel:
      matrix:
        - SESSION_MANAGERS: ["[]", "wireplumber", "media-session", "media-session,wireplumber", "wireplumber,media-session" ]
-@@ -352,7 +356,7 @@ build_meson_prerelease:
+@@ -353,7 +357,7 @@ build_meson_prerelease:
      - ninja $NINJA_ARGS -C "$BUILD_DIR"
      - ninja $NINJA_ARGS -C "$BUILD_DIR" install
    variables:
@@ -95,7 +88,7 @@ index 61fbfafba..cf797105b 100644
    allow_failure: true
  
  build_meson_exact_release:
-@@ -369,7 +373,7 @@ build_meson_exact_release:
+@@ -370,7 +374,7 @@ build_meson_exact_release:
      - ninja $NINJA_ARGS -C "$BUILD_DIR"
      - ninja $NINJA_ARGS -C "$BUILD_DIR" install
    variables:
@@ -105,10 +98,10 @@ index 61fbfafba..cf797105b 100644
  valgrind:
    extends:
 diff --git a/meson.build b/meson.build
-index feca30ae1..5c797e835 100644
+index 6b475b244..f0131693d 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -397,6 +397,23 @@ lilv_lib = dependency('lilv-0', required: get_option('lv2'))
+@@ -399,6 +399,23 @@ lilv_lib = dependency('lilv-0', required: get_option('lv2'))
  summary({'lilv (for lv2 plugins)': lilv_lib.found()}, bool_yn: true)
  cdata.set('HAVE_LILV', lilv_lib.found())
  
@@ -133,16 +126,17 @@ index feca30ae1..5c797e835 100644
    ['gettid', '#include <unistd.h>', ['-D_GNU_SOURCE'], []],
    ['memfd_create', '#include <sys/mman.h>', ['-D_GNU_SOURCE'], []],
 diff --git a/meson_options.txt b/meson_options.txt
-index af72586b0..c6e8221f9 100644
+index af72586b0..05e5287e0 100644
 --- a/meson_options.txt
 +++ b/meson_options.txt
-@@ -318,3 +318,6 @@ option('rlimits-nice',
+@@ -318,3 +318,7 @@ option('rlimits-nice',
         min: -20,
         max: -1,
         value: -19)
 +option('snap',
-+       type : 'feature', value : 'auto',
-+       description : 'Snap support is available.')
++       description : 'Snap support is available.',
++       type : 'feature',
++       value : 'auto')
 diff --git a/src/modules/meson.build b/src/modules/meson.build
 index 717fbf2a6..8e4a55908 100644
 --- a/src/modules/meson.build
@@ -169,11 +163,31 @@ index 717fbf2a6..8e4a55908 100644
  if dbus_dep.found()
    pipewire_module_protocol_pulse_sources += [
      'module-protocol-pulse/dbus-name.c',
+diff --git a/src/modules/module-protocol-pulse/client.c b/src/modules/module-protocol-pulse/client.c
+index 1a4ef85db..32fa8c02b 100644
+--- a/src/modules/module-protocol-pulse/client.c
++++ b/src/modules/module-protocol-pulse/client.c
+@@ -28,6 +28,7 @@
+ #include "pending-sample.h"
+ #include "server.h"
+ #include "stream.h"
++#include "sandbox_access.h"
+ 
+ #define client_emit_disconnect(c) spa_hook_list_call(&(c)->listener_list, struct client_events, disconnect, 0)
+ 
+@@ -165,6 +166,7 @@ void client_free(struct client *client)
+ 
+ 	spa_hook_list_clean(&client->listener_list);
+ 
++	pw_sandbox_access_freed_client(client);
+ 	free(client);
+ }
+ 
 diff --git a/src/modules/module-protocol-pulse/pulse-server.c b/src/modules/module-protocol-pulse/pulse-server.c
-index 41a814a42..c93720e57 100644
+index 08d90e829..add99e570 100644
 --- a/src/modules/module-protocol-pulse/pulse-server.c
 +++ b/src/modules/module-protocol-pulse/pulse-server.c
-@@ -75,6 +75,7 @@
+@@ -55,6 +55,7 @@
  #include "stream.h"
  #include "utils.h"
  #include "volume.h"
@@ -181,7 +195,7 @@ index 41a814a42..c93720e57 100644
  
  #define DEFAULT_MIN_REQ		"256/48000"
  #define DEFAULT_DEFAULT_REQ	"960/48000"
-@@ -1604,6 +1605,9 @@ static int do_create_playback_stream(struct client *client, uint32_t command, ui
+@@ -1584,6 +1585,9 @@ static int do_create_playback_stream(struct client *client, uint32_t command, ui
  	if (props == NULL)
  		goto error_errno;
  
@@ -191,7 +205,7 @@ index 41a814a42..c93720e57 100644
  	if (client->version < 13) {
  		if ((res = message_get(m,
  				TAG_STRING, &name,
-@@ -1816,6 +1820,9 @@ error_protocol:
+@@ -1796,6 +1800,9 @@ error_protocol:
  error_no_formats:
  	res = -ENOTSUP;
  	goto error;
@@ -201,7 +215,7 @@ index 41a814a42..c93720e57 100644
  error_invalid:
  	res = -EINVAL;
  	goto error;
-@@ -1868,6 +1875,10 @@ static int do_create_record_stream(struct client *client, uint32_t command, uint
+@@ -1848,6 +1855,10 @@ static int do_create_record_stream(struct client *client, uint32_t command, uint
  	if (props == NULL)
  		goto error_errno;
  
@@ -212,7 +226,7 @@ index 41a814a42..c93720e57 100644
  	if (client->version < 13) {
  		if (message_get(m,
  				TAG_STRING, &name,
-@@ -2086,6 +2097,9 @@ error_protocol:
+@@ -2066,6 +2077,9 @@ error_protocol:
  error_no_formats:
  	res = -ENOTSUP;
  	goto error;
@@ -224,10 +238,10 @@ index 41a814a42..c93720e57 100644
  	goto error;
 diff --git a/src/modules/module-protocol-pulse/sandbox_access.c b/src/modules/module-protocol-pulse/sandbox_access.c
 new file mode 100644
-index 000000000..fd2161a8e
+index 000000000..dd2b92e20
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/sandbox_access.c
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,49 @@
 +/* PipeWire Sandbox access manager
 + *
 + * Copyright © 2022 Sergio Costas (sergio.costas@canonical.com)
@@ -253,6 +267,7 @@ index 000000000..fd2161a8e
 + */
 +
 +#include <config.h>
++#include <pipewire/pipewire.h>
 +
 +#include "sandbox_access.h"
 +#include "snap-policy.h"
@@ -262,19 +277,26 @@ index 000000000..fd2161a8e
 +    pw_sandbox_access_t permissions;
 +
 +#ifdef HAVE_SNAP
-+    permissions = snap_get_audio_permissions(client);
++    permissions = pw_snap_get_audio_permissions(client);
 +    if ((permissions & PW_SANDBOX_ACCESS_NOT_A_SANDBOX) == 0)
 +        return (perms & permissions) == perms;
 +#endif // HAVE_SNAP
 +    // add here checks for other sandbox technologies, like Flatpak
 +    return true;
 +}
++
++void pw_sandbox_access_freed_client(struct client *client) {
++#ifdef HAVE_SNAP
++    pw_snap_freed_client(client);
++#endif // HAVE_SNAP
++    // add here checks for other sandbox technologies, like Flatpak
++}
 diff --git a/src/modules/module-protocol-pulse/sandbox_access.h b/src/modules/module-protocol-pulse/sandbox_access.h
 new file mode 100644
-index 000000000..03dee60c5
+index 000000000..c54ad491e
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/sandbox_access.h
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,63 @@
 +/* PipeWire Sandbox access manager
 + *
 + * Copyright © 2022 Sergio Costas (sergio.costas@canonical.com)
@@ -305,6 +327,22 @@ index 000000000..03dee60c5
 +#include "client.h"
 +#include <stdbool.h>
 +
++/**
++ * These are the permissions that a sandbox module can return.
++ * Currently, only Snap sandboxes are supported, so PW_SANDBOX_ACCESS_NOT_A_SANDBOX
++ * can seem redundant; but the idea is to be able to support more sandboxing
++ * technologies, like Flatpak. In this case, that value makes sense:
++ * if a sandbox module doesn't identify the process as belonging to a sandbox of
++ * their type, it will return PW_SANDBOX_ACCESS_NOT_A_SANDBOX, so the next sandbox
++ * module will be tried. If none of the sandbox modules detect the process as theirs,
++ * then PW_SANDBOX_ACCESS_ALL permissions will be granted, because it is presumed
++ * that it is a non-sandboxed process.
++ *
++ * To add other sandboxing systems, just modify *pw_sandbox_access_check_permissions()*
++ * function in *sandbox_access.c*, to include a call to get the permissions from
++ * your module.
++ */
++
 +typedef enum _pw_sandbox_access {
 +    PW_SANDBOX_ACCESS_NONE           = 0,
 +    PW_SANDBOX_ACCESS_NOT_A_SANDBOX  = 1 << 0,
@@ -315,14 +353,19 @@ index 000000000..03dee60c5
 +#define PW_SANDBOX_ACCESS_ALL PW_SANDBOX_ACCESS_RECORD|PW_SANDBOX_ACCESS_PLAYBACK
 +
 +bool pw_sandbox_access_check_permissions(struct client *client, pw_sandbox_access_t permissions);
++/**
++ * This function is called every time a struct client is freed. It is useful to remove
++ * it from any kind of cache used in the backends.
++ */
++void pw_sandbox_access_freed_client(struct client *client);
 +
 +#endif // _SANDBOX_ACCESS_H_
 diff --git a/src/modules/module-protocol-pulse/snap-policy.c b/src/modules/module-protocol-pulse/snap-policy.c
 new file mode 100644
-index 000000000..7555f94a8
+index 000000000..04d6ee334
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/snap-policy.c
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,170 @@
 +/***
 +    This file is part of PipeWire.
 +
@@ -360,9 +403,17 @@ index 000000000..7555f94a8
 +#include <fcntl.h>
 +
 +#define SNAP_LABEL_PREFIX      "snap."
-+#define SNAP_LABEL_PREFIX_SIZE 5
 +
-+pw_sandbox_access_t snap_get_audio_permissions(struct client *client)
++static GHashTable *client_cache = NULL;
++
++void pw_snap_freed_client(struct client *client) {
++    if (client_cache != NULL) {
++        pw_log_debug("Freeing %p from snap cache\n", client);
++        g_hash_table_remove(client_cache, client);
++    }
++}
++
++pw_sandbox_access_t pw_snap_get_audio_permissions(struct client *client)
 +{
 +    pid_t pid;
 +    g_autofree gchar* aa_label = NULL;
@@ -383,29 +434,44 @@ index 000000000..7555f94a8
 +        return PW_SANDBOX_ACCESS_NONE;
 +    }
 +
++    if (client_cache == NULL)
++        client_cache = g_hash_table_new(g_direct_hash, g_direct_equal);
++
++    if (g_hash_table_contains(client_cache, client)) {
++        permissions = GPOINTER_TO_INT(g_hash_table_lookup(client_cache, client));
++        pw_log_debug("Using cached permissions for %p in snap cache: %X\n", client, permissions);
++        return permissions;
++    }
++
 +    // Get SNAP ID
 +    if (pw_properties_fetch_int32(client->props, PW_KEY_APP_PROCESS_ID, &pid) != 0) {
 +        pw_log_warn("snap_get_audio_permissions: failed to get 'application.process.id' property as an int32 value.");
-+        return PW_SANDBOX_ACCESS_NONE;
++        permissions = PW_SANDBOX_ACCESS_NONE;
++        goto return_permissions;
 +    }
 +
 +    if (aa_gettaskcon(pid, &aa_label, &snap_confinement) == -1) {
 +        if (errno == EINVAL) {
 +            // if apparmor isn't enabled, we can safely assume that there are no SNAPs in the system
-+            return PW_SANDBOX_ACCESS_NOT_A_SANDBOX;
++            permissions = PW_SANDBOX_ACCESS_NOT_A_SANDBOX;
++            goto return_permissions;
 +        }
-+        return PW_SANDBOX_ACCESS_NONE;
++        permissions = PW_SANDBOX_ACCESS_NONE;
++        goto return_permissions;
 +    }
 +    if (!g_str_has_prefix(aa_label, SNAP_LABEL_PREFIX)) {
 +        // not a SNAP.
 +        pw_log_info("snap_get_audio_permissions: not an snap.");
-+        return PW_SANDBOX_ACCESS_NOT_A_SANDBOX;
++        permissions = PW_SANDBOX_ACCESS_NOT_A_SANDBOX;
++        goto return_permissions;
 +    }
-+    // it's a "classic confinement" snap, so we give it full access
-+    if (!g_strcmp0 (snap_confinement, "complain"))
-+        return PW_SANDBOX_ACCESS_ALL;
++    // it's a "classic" or a "devmode" confinement snap, so we give it full access
++    if (!g_strcmp0 (snap_confinement, "complain")) {
++        permissions = PW_SANDBOX_ACCESS_ALL;
++        goto return_permissions;
++    }
 +
-+    snap_id = strdup(aa_label + SNAP_LABEL_PREFIX_SIZE);
++    snap_id = strdup(aa_label + strlen(SNAP_LABEL_PREFIX));
 +    separator = strchr(snap_id, '.');
 +    if (separator != NULL)
 +        *separator = 0;
@@ -427,15 +493,15 @@ index 000000000..7555f94a8
 +                                              NULL,
 +                                              NULL);
 +    if (retv == FALSE) {
-+        pw_log_warn("Failed to get Snap connections\n");
++        pw_log_warn("Failed to get Snap connections for snap %s\n", snap_id);
 +        return PW_SANDBOX_ACCESS_NONE;
 +    }
 +    if (plugs == NULL) {
-+        pw_log_warn("Failed to get Snap connections\n");
++        pw_log_warn("Failed to get Snap connections for snap %s\n", snap_id);
 +        return PW_SANDBOX_ACCESS_NONE;
 +    }
 +    if (plugs->pdata == NULL) {
-+        pw_log_warn("Failed to get Snap connections\n");
++        pw_log_warn("Failed to get Snap connections for snap %s\n", snap_id);
 +        return PW_SANDBOX_ACCESS_NONE;
 +    }
 +
@@ -464,14 +530,18 @@ index 000000000..7555f94a8
 +                    permissions |= add_permission;
 +        }
 +    }
++
++return_permissions:
++    g_hash_table_insert(client_cache, client, GINT_TO_POINTER(permissions));
++    pw_log_debug("Caching permissions for %p in snap cache: %X\n", client, permissions);
 +    return permissions;
 +}
 diff --git a/src/modules/module-protocol-pulse/snap-policy.h b/src/modules/module-protocol-pulse/snap-policy.h
 new file mode 100644
-index 000000000..25d8f0ebb
+index 000000000..169efcfa7
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/snap-policy.h
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,30 @@
 +/***
 +    This file is part of PipeWire.
 +
@@ -498,6 +568,7 @@ index 000000000..25d8f0ebb
 +
 +#include "sandbox_access.h"
 +
-+pw_sandbox_access_t snap_get_audio_permissions(struct client *client);
++pw_sandbox_access_t pw_snap_get_audio_permissions(struct client *client);
++void pw_snap_freed_client(struct client *client);
 +
 +#endif // _SNAP_POLICY_H_
