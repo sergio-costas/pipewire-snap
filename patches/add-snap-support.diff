@@ -98,7 +98,7 @@ index 88ed826c8..e0760af26 100644
  valgrind:
    extends:
 diff --git a/meson.build b/meson.build
-index 6b475b244..f0131693d 100644
+index e5f813ef7..7030a9a4f 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -399,6 +399,23 @@ lilv_lib = dependency('lilv-0', required: get_option('lv2'))
@@ -163,28 +163,8 @@ index 717fbf2a6..8e4a55908 100644
  if dbus_dep.found()
    pipewire_module_protocol_pulse_sources += [
      'module-protocol-pulse/dbus-name.c',
-diff --git a/src/modules/module-protocol-pulse/client.c b/src/modules/module-protocol-pulse/client.c
-index 1a4ef85db..32fa8c02b 100644
---- a/src/modules/module-protocol-pulse/client.c
-+++ b/src/modules/module-protocol-pulse/client.c
-@@ -28,6 +28,7 @@
- #include "pending-sample.h"
- #include "server.h"
- #include "stream.h"
-+#include "sandbox_access.h"
- 
- #define client_emit_disconnect(c) spa_hook_list_call(&(c)->listener_list, struct client_events, disconnect, 0)
- 
-@@ -165,6 +166,7 @@ void client_free(struct client *client)
- 
- 	spa_hook_list_clean(&client->listener_list);
- 
-+	pw_sandbox_access_freed_client(client);
- 	free(client);
- }
- 
 diff --git a/src/modules/module-protocol-pulse/pulse-server.c b/src/modules/module-protocol-pulse/pulse-server.c
-index 08d90e829..add99e570 100644
+index 0beda77a3..286413486 100644
 --- a/src/modules/module-protocol-pulse/pulse-server.c
 +++ b/src/modules/module-protocol-pulse/pulse-server.c
 @@ -55,6 +55,7 @@
@@ -205,7 +185,7 @@ index 08d90e829..add99e570 100644
  	if (client->version < 13) {
  		if ((res = message_get(m,
  				TAG_STRING, &name,
-@@ -1796,6 +1800,9 @@ error_protocol:
+@@ -1785,6 +1789,9 @@ error_protocol:
  error_no_formats:
  	res = -ENOTSUP;
  	goto error;
@@ -215,18 +195,17 @@ index 08d90e829..add99e570 100644
  error_invalid:
  	res = -EINVAL;
  	goto error;
-@@ -1848,6 +1855,10 @@ static int do_create_record_stream(struct client *client, uint32_t command, uint
+@@ -1837,6 +1844,9 @@ static int do_create_record_stream(struct client *client, uint32_t command, uint
  	if (props == NULL)
  		goto error_errno;
  
-+	// check permissions
 +	if (!pw_sandbox_access_check_permissions(client, PW_SANDBOX_ACCESS_RECORD))
 +		goto error_no_permissions;
 +
  	if (client->version < 13) {
  		if (message_get(m,
  				TAG_STRING, &name,
-@@ -2066,6 +2077,9 @@ error_protocol:
+@@ -2044,6 +2054,9 @@ error_protocol:
  error_no_formats:
  	res = -ENOTSUP;
  	goto error;
@@ -238,10 +217,10 @@ index 08d90e829..add99e570 100644
  	goto error;
 diff --git a/src/modules/module-protocol-pulse/sandbox_access.c b/src/modules/module-protocol-pulse/sandbox_access.c
 new file mode 100644
-index 000000000..dd2b92e20
+index 000000000..9919051c5
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/sandbox_access.c
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,47 @@
 +/* PipeWire Sandbox access manager
 + *
 + * Copyright © 2022 Sergio Costas (sergio.costas@canonical.com)
@@ -277,26 +256,24 @@ index 000000000..dd2b92e20
 +    pw_sandbox_access_t permissions;
 +
 +#ifdef HAVE_SNAP
-+    permissions = pw_snap_get_audio_permissions(client);
-+    if ((permissions & PW_SANDBOX_ACCESS_NOT_A_SANDBOX) == 0)
-+        return (perms & permissions) == perms;
++    permissions = PW_SANDBOX_ACCESS_NONE;
++    if (pw_properties_get(client->props, PW_KEY_SNAP_ID) != NULL) {
++        if (pw_properties_get_bool(client->props, PW_KEY_SNAP_PLAYBACK_ALLOWED, false))
++            permissions |= PW_SANDBOX_ACCESS_PLAYBACK;
++        if (pw_properties_get_bool(client->props, PW_KEY_SNAP_RECORD_ALLOWED, false))
++            permissions |= PW_SANDBOX_ACCESS_RECORD;
++        return (permissions & perms) == perms;
++    }
 +#endif // HAVE_SNAP
 +    // add here checks for other sandbox technologies, like Flatpak
 +    return true;
 +}
-+
-+void pw_sandbox_access_freed_client(struct client *client) {
-+#ifdef HAVE_SNAP
-+    pw_snap_freed_client(client);
-+#endif // HAVE_SNAP
-+    // add here checks for other sandbox technologies, like Flatpak
-+}
 diff --git a/src/modules/module-protocol-pulse/sandbox_access.h b/src/modules/module-protocol-pulse/sandbox_access.h
 new file mode 100644
-index 000000000..c54ad491e
+index 000000000..0081b4a2e
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/sandbox_access.h
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,58 @@
 +/* PipeWire Sandbox access manager
 + *
 + * Copyright © 2022 Sergio Costas (sergio.costas@canonical.com)
@@ -352,20 +329,55 @@ index 000000000..c54ad491e
 +
 +#define PW_SANDBOX_ACCESS_ALL PW_SANDBOX_ACCESS_RECORD|PW_SANDBOX_ACCESS_PLAYBACK
 +
-+bool pw_sandbox_access_check_permissions(struct client *client, pw_sandbox_access_t permissions);
-+/**
-+ * This function is called every time a struct client is freed. It is useful to remove
-+ * it from any kind of cache used in the backends.
-+ */
-+void pw_sandbox_access_freed_client(struct client *client);
++bool pw_sandbox_access_check_permissions(struct client *client, pw_sandbox_access_t required_permissions);
 +
 +#endif // _SANDBOX_ACCESS_H_
+diff --git a/src/modules/module-protocol-pulse/server.c b/src/modules/module-protocol-pulse/server.c
+index e01974eeb..9fa333fef 100644
+--- a/src/modules/module-protocol-pulse/server.c
++++ b/src/modules/module-protocol-pulse/server.c
+@@ -41,6 +41,9 @@
+ #include "stream.h"
+ #include "utils.h"
+ #include "flatpak-utils.h"
++#ifdef HAVE_SNAP
++#include "snap-policy.h"
++#endif
+ 
+ #define LISTEN_BACKLOG 32
+ #define MAX_CLIENTS 64
+@@ -405,6 +408,9 @@ on_connect(void *data, int fd, uint32_t mask)
+ 
+ 	if (server->addr.ss_family == AF_UNIX) {
+ 		char *app_id = NULL, *devices = NULL;
++#ifdef HAVE_SNAP
++		pw_sandbox_access_t snap_access;
++#endif
+ 
+ #ifdef SO_PRIORITY
+ 		val = 6;
+@@ -443,6 +449,15 @@ on_connect(void *data, int fd, uint32_t mask)
+ 			else
+ 				pw_properties_set(client->props, PW_KEY_MEDIA_CATEGORY, NULL);
+ 		}
++		// check SNAP permissions
++#ifdef HAVE_SNAP
++		snap_access = pw_snap_get_audio_permissions(client, client_fd, &app_id);
++		if ((snap_access & PW_SANDBOX_ACCESS_NOT_A_SANDBOX) == 0) {
++			pw_properties_set(client->props, PW_KEY_SNAP_ID, app_id);
++			pw_properties_set(client->props, PW_KEY_SNAP_PLAYBACK_ALLOWED, (snap_access & PW_SANDBOX_ACCESS_PLAYBACK) ? "1" : "0");
++			pw_properties_set(client->props, PW_KEY_SNAP_RECORD_ALLOWED, (snap_access & PW_SANDBOX_ACCESS_RECORD) ? "1" : "0");
++		}
++#endif
+ 		free(devices);
+ 		free(app_id);
+ 	}
 diff --git a/src/modules/module-protocol-pulse/snap-policy.c b/src/modules/module-protocol-pulse/snap-policy.c
 new file mode 100644
-index 000000000..04d6ee334
+index 000000000..54fc4c279
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/snap-policy.c
-@@ -0,0 +1,170 @@
+@@ -0,0 +1,144 @@
 +/***
 +    This file is part of PipeWire.
 +
@@ -406,18 +418,11 @@ index 000000000..04d6ee334
 +
 +static GHashTable *client_cache = NULL;
 +
-+void pw_snap_freed_client(struct client *client) {
-+    if (client_cache != NULL) {
-+        pw_log_debug("Freeing %p from snap cache\n", client);
-+        g_hash_table_remove(client_cache, client);
-+    }
-+}
-+
-+pw_sandbox_access_t pw_snap_get_audio_permissions(struct client *client)
++pw_sandbox_access_t pw_snap_get_audio_permissions(struct client *client, int fd, char **app_id)
 +{
 +    pid_t pid;
 +    g_autofree gchar* aa_label = NULL;
-+    g_autofree gchar* snap_id = NULL;
++    gchar* snap_id = NULL;
 +    gchar* snap_confinement = NULL;
 +    gchar *separator;
 +    g_autoptr(SnapdClient) snapdclient = NULL;
@@ -429,52 +434,36 @@ index 000000000..04d6ee334
 +    GPtrArray *slots;
 +    SnapdSlotRef **slot;
 +
++    *app_id = strdup("unknown");
 +    if (client == NULL) {
 +        pw_log_warn("Called snap_get_audio_permissions with NULL parameter.");
 +        return PW_SANDBOX_ACCESS_NONE;
 +    }
 +
-+    if (client_cache == NULL)
-+        client_cache = g_hash_table_new(g_direct_hash, g_direct_equal);
-+
-+    if (g_hash_table_contains(client_cache, client)) {
-+        permissions = GPOINTER_TO_INT(g_hash_table_lookup(client_cache, client));
-+        pw_log_debug("Using cached permissions for %p in snap cache: %X\n", client, permissions);
-+        return permissions;
-+    }
-+
-+    // Get SNAP ID
-+    if (pw_properties_fetch_int32(client->props, PW_KEY_APP_PROCESS_ID, &pid) != 0) {
-+        pw_log_warn("snap_get_audio_permissions: failed to get 'application.process.id' property as an int32 value.");
-+        permissions = PW_SANDBOX_ACCESS_NONE;
-+        goto return_permissions;
-+    }
-+
-+    if (aa_gettaskcon(pid, &aa_label, &snap_confinement) == -1) {
++    if (aa_getpeercon(fd, &aa_label, &snap_confinement) == -1) {
 +        if (errno == EINVAL) {
 +            // if apparmor isn't enabled, we can safely assume that there are no SNAPs in the system
-+            permissions = PW_SANDBOX_ACCESS_NOT_A_SANDBOX;
-+            goto return_permissions;
++            return PW_SANDBOX_ACCESS_NOT_A_SANDBOX;
 +        }
-+        permissions = PW_SANDBOX_ACCESS_NONE;
-+        goto return_permissions;
++        pw_log_warn("snap_get_audio_permissions: failed to get the AppArmor info.");
++        return PW_SANDBOX_ACCESS_NONE;
 +    }
 +    if (!g_str_has_prefix(aa_label, SNAP_LABEL_PREFIX)) {
 +        // not a SNAP.
 +        pw_log_info("snap_get_audio_permissions: not an snap.");
-+        permissions = PW_SANDBOX_ACCESS_NOT_A_SANDBOX;
-+        goto return_permissions;
-+    }
-+    // it's a "classic" or a "devmode" confinement snap, so we give it full access
-+    if (!g_strcmp0 (snap_confinement, "complain")) {
-+        permissions = PW_SANDBOX_ACCESS_ALL;
-+        goto return_permissions;
++        return PW_SANDBOX_ACCESS_NOT_A_SANDBOX;
 +    }
 +
 +    snap_id = strdup(aa_label + strlen(SNAP_LABEL_PREFIX));
 +    separator = strchr(snap_id, '.');
 +    if (separator != NULL)
 +        *separator = 0;
++    *app_id = snap_id;
++
++    // it's a "classic" or a "devmode" confinement snap, so we give it full access
++    if (!g_strcmp0 (snap_confinement, "complain")) {
++        return PW_SANDBOX_ACCESS_ALL;
++    }
 +
 +    snapdclient = snapd_client_new();
 +    if (snapdclient == NULL) {
@@ -531,17 +520,14 @@ index 000000000..04d6ee334
 +        }
 +    }
 +
-+return_permissions:
-+    g_hash_table_insert(client_cache, client, GINT_TO_POINTER(permissions));
-+    pw_log_debug("Caching permissions for %p in snap cache: %X\n", client, permissions);
 +    return permissions;
 +}
 diff --git a/src/modules/module-protocol-pulse/snap-policy.h b/src/modules/module-protocol-pulse/snap-policy.h
 new file mode 100644
-index 000000000..169efcfa7
+index 000000000..78ba6a7e4
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/snap-policy.h
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,42 @@
 +/***
 +    This file is part of PipeWire.
 +
@@ -568,7 +554,19 @@ index 000000000..169efcfa7
 +
 +#include "sandbox_access.h"
 +
-+pw_sandbox_access_t pw_snap_get_audio_permissions(struct client *client);
-+void pw_snap_freed_client(struct client *client);
++/**
++ * These are the permissions that a sandbox module can return.
++ * The PW_SNAP_ACCESS_NOT_A_SANDBOX allows to differentiate between a sandbox
++ * with no audio permissions, and a program that is not a SNAP sandbox.
++ * This can happen if there is an error that precludes determining without doubt
++ * if the program is running or not in a SNAP sandbox.
++ */
++
++#define PW_KEY_SNAP_ID "pipewire.snap.id"
++#define PW_KEY_SNAP_PLAYBACK_ALLOWED "pipewire.snap.playback"
++#define PW_KEY_SNAP_RECORD_ALLOWED "pipewire.snap.record"
++
++pw_sandbox_access_t pw_snap_get_audio_permissions(struct client *client, int fd, char **app_id);
++bool pw_snap_check_audio_permissions(struct client *client, pw_sandbox_access_t required_permissions);
 +
 +#endif // _SNAP_POLICY_H_
