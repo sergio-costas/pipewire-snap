@@ -1,6 +1,6 @@
 name: pipewire
 base: core22
-version: '0.1'
+version: '0.2'
 summary: Pipewire server, plus wireplumber and pipewire-pulse
 description: |
   The pipewire video/audio daemon server.
