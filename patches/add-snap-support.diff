@@ -164,7 +164,7 @@ index 717fbf2a6..8e4a55908 100644
    pipewire_module_protocol_pulse_sources += [
      'module-protocol-pulse/dbus-name.c',
 diff --git a/src/modules/module-protocol-pulse/pulse-server.c b/src/modules/module-protocol-pulse/pulse-server.c
-index 0beda77a3..286413486 100644
+index a2a9f6cdb..11ff02206 100644
 --- a/src/modules/module-protocol-pulse/pulse-server.c
 +++ b/src/modules/module-protocol-pulse/pulse-server.c
 @@ -55,6 +55,7 @@
@@ -185,7 +185,7 @@ index 0beda77a3..286413486 100644
  	if (client->version < 13) {
  		if ((res = message_get(m,
  				TAG_STRING, &name,
-@@ -1785,6 +1789,9 @@ error_protocol:
+@@ -1804,6 +1808,9 @@ error_protocol:
  error_no_formats:
  	res = -ENOTSUP;
  	goto error;
@@ -195,7 +195,7 @@ index 0beda77a3..286413486 100644
  error_invalid:
  	res = -EINVAL;
  	goto error;
-@@ -1837,6 +1844,9 @@ static int do_create_record_stream(struct client *client, uint32_t command, uint
+@@ -1856,6 +1863,9 @@ static int do_create_record_stream(struct client *client, uint32_t command, uint
  	if (props == NULL)
  		goto error_errno;
  
@@ -205,7 +205,7 @@ index 0beda77a3..286413486 100644
  	if (client->version < 13) {
  		if (message_get(m,
  				TAG_STRING, &name,
-@@ -2044,6 +2054,9 @@ error_protocol:
+@@ -2082,6 +2092,9 @@ error_protocol:
  error_no_formats:
  	res = -ENOTSUP;
  	goto error;
@@ -217,10 +217,10 @@ index 0beda77a3..286413486 100644
  	goto error;
 diff --git a/src/modules/module-protocol-pulse/sandbox_access.c b/src/modules/module-protocol-pulse/sandbox_access.c
 new file mode 100644
-index 000000000..9919051c5
+index 000000000..a8f8c208d
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/sandbox_access.c
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,45 @@
 +/* PipeWire Sandbox access manager
 + *
 + * Copyright © 2022 Sergio Costas (sergio.costas@canonical.com)
@@ -253,10 +253,8 @@ index 000000000..9919051c5
 +
 +bool pw_sandbox_access_check_permissions(struct client *client, pw_sandbox_access_t perms)
 +{
-+    pw_sandbox_access_t permissions;
-+
 +#ifdef HAVE_SNAP
-+    permissions = PW_SANDBOX_ACCESS_NONE;
++    pw_sandbox_access_t permissions = PW_SANDBOX_ACCESS_NONE;
 +    if (pw_properties_get(client->props, PW_KEY_SNAP_ID) != NULL) {
 +        if (pw_properties_get_bool(client->props, PW_KEY_SNAP_PLAYBACK_ALLOWED, false))
 +            permissions |= PW_SANDBOX_ACCESS_PLAYBACK;
@@ -270,10 +268,10 @@ index 000000000..9919051c5
 +}
 diff --git a/src/modules/module-protocol-pulse/sandbox_access.h b/src/modules/module-protocol-pulse/sandbox_access.h
 new file mode 100644
-index 000000000..0081b4a2e
+index 000000000..c945bab45
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/sandbox_access.h
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,54 @@
 +/* PipeWire Sandbox access manager
 + *
 + * Copyright © 2022 Sergio Costas (sergio.costas@canonical.com)
@@ -306,18 +304,14 @@ index 000000000..0081b4a2e
 +
 +/**
 + * These are the permissions that a sandbox module can return.
-+ * Currently, only Snap sandboxes are supported, so PW_SANDBOX_ACCESS_NOT_A_SANDBOX
-+ * can seem redundant; but the idea is to be able to support more sandboxing
-+ * technologies, like Flatpak. In this case, that value makes sense:
-+ * if a sandbox module doesn't identify the process as belonging to a sandbox of
-+ * their type, it will return PW_SANDBOX_ACCESS_NOT_A_SANDBOX, so the next sandbox
-+ * module will be tried. If none of the sandbox modules detect the process as theirs,
-+ * then PW_SANDBOX_ACCESS_ALL permissions will be granted, because it is presumed
-+ * that it is a non-sandboxed process.
-+ *
-+ * To add other sandboxing systems, just modify *pw_sandbox_access_check_permissions()*
-+ * function in *sandbox_access.c*, to include a call to get the permissions from
-+ * your module.
++ * If no sandbox have been detected, this function should return
++ * PW_SANDBOX_ACCESS_NOT_A_SANDBOX.
++ * But if a sandbox is detected, then it must return PW_SANDBOX_ACCESS_PLAYBACK,
++ * PW_SANDBOX_ACCESS_RECORD or a combination of them based on the permissions
++ * that the sandbox has.
++ * If a sandbox is detected but there is some error when accessing the permissions
++ * (for example, if pipewire is itself in a sandbox and has no permissions to read
++ * another snap's permissions) it should return PW_SANDBOX_ACCESS_NONE.
 + */
 +
 +typedef enum _pw_sandbox_access {
@@ -333,7 +327,7 @@ index 000000000..0081b4a2e
 +
 +#endif // _SANDBOX_ACCESS_H_
 diff --git a/src/modules/module-protocol-pulse/server.c b/src/modules/module-protocol-pulse/server.c
-index e01974eeb..9fa333fef 100644
+index e01974eeb..655de7e91 100644
 --- a/src/modules/module-protocol-pulse/server.c
 +++ b/src/modules/module-protocol-pulse/server.c
 @@ -41,6 +41,9 @@
@@ -356,7 +350,7 @@ index e01974eeb..9fa333fef 100644
  
  #ifdef SO_PRIORITY
  		val = 6;
-@@ -443,6 +449,15 @@ on_connect(void *data, int fd, uint32_t mask)
+@@ -443,6 +449,21 @@ on_connect(void *data, int fd, uint32_t mask)
  			else
  				pw_properties_set(client->props, PW_KEY_MEDIA_CATEGORY, NULL);
  		}
@@ -365,8 +359,14 @@ index e01974eeb..9fa333fef 100644
 +		snap_access = pw_snap_get_audio_permissions(client, client_fd, &app_id);
 +		if ((snap_access & PW_SANDBOX_ACCESS_NOT_A_SANDBOX) == 0) {
 +			pw_properties_set(client->props, PW_KEY_SNAP_ID, app_id);
-+			pw_properties_set(client->props, PW_KEY_SNAP_PLAYBACK_ALLOWED, (snap_access & PW_SANDBOX_ACCESS_PLAYBACK) ? "1" : "0");
-+			pw_properties_set(client->props, PW_KEY_SNAP_RECORD_ALLOWED, (snap_access & PW_SANDBOX_ACCESS_RECORD) ? "1" : "0");
++
++			pw_properties_set(client->props,
++			                  PW_KEY_SNAP_PLAYBACK_ALLOWED,
++			                  (snap_access & PW_SANDBOX_ACCESS_PLAYBACK) ? "1" : "0");
++
++			pw_properties_set(client->props,
++			                  PW_KEY_SNAP_RECORD_ALLOWED,
++			                  (snap_access & PW_SANDBOX_ACCESS_RECORD) ? "1" : "0");
 +		}
 +#endif
  		free(devices);
@@ -524,10 +524,10 @@ index 000000000..54fc4c279
 +}
 diff --git a/src/modules/module-protocol-pulse/snap-policy.h b/src/modules/module-protocol-pulse/snap-policy.h
 new file mode 100644
-index 000000000..78ba6a7e4
+index 000000000..6a646b50e
 --- /dev/null
 +++ b/src/modules/module-protocol-pulse/snap-policy.h
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,34 @@
 +/***
 +    This file is part of PipeWire.
 +
@@ -553,14 +553,6 @@ index 000000000..78ba6a7e4
 +#define _SNAP_POLICY_H_
 +
 +#include "sandbox_access.h"
-+
-+/**
-+ * These are the permissions that a sandbox module can return.
-+ * The PW_SNAP_ACCESS_NOT_A_SANDBOX allows to differentiate between a sandbox
-+ * with no audio permissions, and a program that is not a SNAP sandbox.
-+ * This can happen if there is an error that precludes determining without doubt
-+ * if the program is running or not in a SNAP sandbox.
-+ */
 +
 +#define PW_KEY_SNAP_ID "pipewire.snap.id"
 +#define PW_KEY_SNAP_PLAYBACK_ALLOWED "pipewire.snap.playback"

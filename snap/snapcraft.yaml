@@ -5,7 +5,7 @@ summary: Pipewire server, plus wireplumber and pipewire-pulse
 description: |
   The pipewire video/audio daemon server.
 
-grade: devel
+grade: stable
 confinement: strict
 
 layout:
