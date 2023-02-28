@@ -24,7 +24,7 @@ layout:
 
 environment:
   SPA_PLUGIN_DIR: $SNAP/usr/lib/x86_64-linux-gnu/spa-0.2
-  #PIPEWIRE_RUNTIME_DIR: $XDG_RUNTIME_DIR/..
+  PIPEWIRE_RUNTIME_DIR: $XDG_RUNTIME_DIR/..
   PULSE_RUNTIME_PATH: $XDG_RUNTIME_DIR/../pulse
 
 apps:
@@ -42,7 +42,7 @@ plugs:
   hardware-observe: null
   network: null
   network-bind: null
-  #pipewire-server: null
+  pipewire-server: null
   snapd-control: null
   system-observe: null
 
