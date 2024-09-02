@@ -2,6 +2,9 @@
 
 mkdir -p $XDG_RUNTIME_DIR
 
+rm -f $XDG_RUNTIME_DIR/../pipewire-*
+rm -rf $XDG_RUNTIME_DIR/../pulse
+
 $SNAP/usr/bin/pipewire &
 $SNAP/usr/bin/wireplumber &
 $SNAP/usr/bin/pipewire-pulse
