@@ -1,6 +1,6 @@
 name: pipewire
 base: core24
-version: git
+adopt-info: pipewire
 summary: Pipewire server, plus wireplumber and pipewire-pulse
 description: |
   The pipewire video/audio daemon server.
@@ -38,6 +38,7 @@ apps:
     slots:
       - audio-playback
       - audio-record
+      - pulseaudio
     plugs:
       - alsa
       - bluez
@@ -77,7 +78,14 @@ parts:
       - -Dsystemd=enabled
       - -Dsnap=enabled
 #      - -Dsession-managers=[]
-      - -Dsnap=enabled
+    override-pull: |
+      craftctl default
+      git apply ${CRAFT_PROJECT_DIR}/patches/allow-pipewire-snap-to-implement-security.diff
+      git_ver="$(git describe --tags --match "applied/*")"
+      git_ver="${git_ver#importer/}"
+      git_ver="${git_ver#applied/}"
+      git_ver="${git_ver%-0-g*}"
+      craftctl set version="${git_ver}"
     build-packages:
       - dpkg-dev
       - debhelper-compat

@@ -11,3 +11,5 @@ $SNAP/usr/bin/pipewire-pulse
 killall $SNAP/usr/bin/pipewire
 killall $SNAP/usr/bin/wireplumber
 
+rm -f $XDG_RUNTIME_DIR/../pipewire-*
+rm -rf $XDG_RUNTIME_DIR/../pulse
