@@ -123,7 +123,6 @@ parts:
       - -Dsnap=enabled
     override-pull: |
       craftctl default
-      git apply ${CRAFT_PROJECT_DIR}/patches/allow-pipewire-snap-to-implement-security.diff
       git_ver="$(git describe --tags --match "applied/*")"
       git_ver="${git_ver#importer/}"
       git_ver="${git_ver#applied/}"
