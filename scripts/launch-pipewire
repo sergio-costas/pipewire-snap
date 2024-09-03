@@ -1,0 +1,14 @@
+#!/bin/sh
+
+launch_pipewire() {
+        usr/bin/pipewire
+        killall wireplumber || true
+}
+
+launch_wireplumber() {
+        usr/bin/wireplumber
+        killall pipewire || true
+}
+
+launch_pipewire &
+launch_wireplumber

@@ -7,7 +7,7 @@ rm -rf $XDG_RUNTIME_DIR/../pulse
 
 mkdir -p $XDG_RUNTIME_DIR/../pulse
 
-ln -s $XDG_RUNTIME_DIR/pipewire-0 $XDG_RUNTIME_DIR/../pipewire-0
-ln -s $XDG_RUNTIME_DIR/pipewire-0.lock $XDG_RUNTIME_DIR/../pipewire-0.lock
-ln -s $XDG_RUNTIME_DIR/pulse/native $XDG_RUNTIME_DIR/../pulse/native
-ln -s $XDG_RUNTIME_DIR/pulse/pid $XDG_RUNTIME_DIR/../pulse/pid
+ln -f -s $XDG_RUNTIME_DIR/pipewire-0 $XDG_RUNTIME_DIR/../pipewire-0
+ln -f -s $XDG_RUNTIME_DIR/pipewire-0.lock $XDG_RUNTIME_DIR/../pipewire-0.lock
+ln -f -s $XDG_RUNTIME_DIR/pulse/native $XDG_RUNTIME_DIR/../pulse/native
+ln -f -s $XDG_RUNTIME_DIR/pulse/pid $XDG_RUNTIME_DIR/../pulse/pid

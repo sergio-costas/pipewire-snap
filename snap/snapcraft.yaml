@@ -33,12 +33,13 @@ environment:
 apps:
   pipewire:
     command: snap/command-chain/pipewire-init
-    daemon: oneshot
+    daemon: simple
+    restart-condition: never
     passthrough:
       daemon-scope: user
 
   pipewire-bin:
-    command: usr/bin/pipewire
+    command: scripts/launch-pipewire
     daemon: simple
     passthrough:
       daemon-scope: user
