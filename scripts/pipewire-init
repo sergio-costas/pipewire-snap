@@ -1,0 +1,13 @@
+#!/bin/sh
+
+mkdir -p $XDG_RUNTIME_DIR
+
+rm -f $XDG_RUNTIME_DIR/../pipewire-*
+rm -rf $XDG_RUNTIME_DIR/../pulse
+
+mkdir -p $XDG_RUNTIME_DIR/../pulse
+
+ln -s $XDG_RUNTIME_DIR/pipewire-0 $XDG_RUNTIME_DIR/../pipewire-0
+ln -s $XDG_RUNTIME_DIR/pipewire-0.lock $XDG_RUNTIME_DIR/../pipewire-0.lock
+ln -s $XDG_RUNTIME_DIR/pulse/native $XDG_RUNTIME_DIR/../pulse/native
+ln -s $XDG_RUNTIME_DIR/pulse/pid $XDG_RUNTIME_DIR/../pulse/pid
