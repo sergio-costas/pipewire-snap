@@ -39,19 +39,33 @@ apps:
       - pulseaudio
 
   pipewire-bin:
-    command: snap/command-chain/launch-pipewire
+    command: usr/bin/pipewire
     daemon: simple
-    passthrough:
-      daemon-scope: user
     restart-condition: always
     sockets:
       pipewire-socket:
         listen-stream: $XDG_RUNTIME_DIR/pipewire-0
         socket-mode: 0644
-    slots:
-      - audio-playback
-      - audio-record
-      - pulseaudio
+    before:
+      - wireplumber-bin
+    passthrough:
+      daemon-scope: user
+    plugs:
+      - alsa
+      - bluez
+      - hardware-observe
+      - network
+      - network-bind
+      - system-observe
+
+  wireplumber-bin:
+    command: usr/bin/wireplumber
+    daemon: simple
+    restart-condition: always
+    after:
+      - pipewire-bin
+    passthrough:
+      daemon-scope: user
     plugs:
       - alsa
       - bluez
@@ -70,10 +84,6 @@ apps:
       pulse-socket:
         listen-stream: $XDG_RUNTIME_DIR/pulse/native
         socket-mode: 0644
-    slots:
-      - audio-playback
-      - audio-record
-      - pulseaudio
     plugs:
       - alsa
       - bluez
