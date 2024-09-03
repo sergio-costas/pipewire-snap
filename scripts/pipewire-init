@@ -1,7 +1,5 @@
 #!/bin/sh
 
-mkdir -p $XDG_RUNTIME_DIR
-
 rm -f $XDG_RUNTIME_DIR/../pipewire-*
 rm -rf $XDG_RUNTIME_DIR/../pulse
 
