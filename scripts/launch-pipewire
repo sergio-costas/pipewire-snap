@@ -1,12 +1,12 @@
 #!/bin/sh
 
 launch_pipewire() {
-        usr/bin/pipewire
+        $SNAP/usr/bin/pipewire
         killall wireplumber || true
 }
 
 launch_wireplumber() {
-        usr/bin/wireplumber
+        $SNAP/usr/bin/wireplumber
         killall pipewire || true
 }
 

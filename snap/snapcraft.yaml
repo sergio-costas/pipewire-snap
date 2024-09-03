@@ -19,15 +19,11 @@ layout:
     bind: $SNAP/usr/share/alsa-card-profile
   /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3:
     symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3
-  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/wireplumber-0.4:
-    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/wireplumber-0.4
   /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/wireplumber-0.5:
     symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/wireplumber-0.5
 
 environment:
   SPA_PLUGIN_DIR: $SNAP/usr/lib/x86_64-linux-gnu/spa-0.2
-  #PIPEWIRE_RUNTIME_DIR: $XDG_RUNTIME_DIR/..
-  #PULSE_RUNTIME_PATH: $XDG_RUNTIME_DIR/../pulse
   LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}/usr/lib:/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3
 
 apps:
@@ -37,9 +33,13 @@ apps:
     restart-condition: never
     passthrough:
       daemon-scope: user
+    slots:
+      - audio-playback
+      - audio-record
+      - pulseaudio
 
   pipewire-bin:
-    command: scripts/launch-pipewire
+    command: snap/command-chain/launch-pipewire
     daemon: simple
     passthrough:
       daemon-scope: user
@@ -58,7 +58,6 @@ apps:
       - hardware-observe
       - network
       - network-bind
-      - snapd-control
       - system-observe
 
   pipewire-pulse:
@@ -81,7 +80,6 @@ apps:
       - hardware-observe
       - network
       - network-bind
-      - snapd-control
       - system-observe
 
 slots:
@@ -113,7 +111,6 @@ parts:
       - -Dtests=disabled
       - -Dsystemd=enabled
       - -Dsnap=enabled
-#      - -Dsession-managers=[]
     override-pull: |
       craftctl default
       git apply ${CRAFT_PROJECT_DIR}/patches/allow-pipewire-snap-to-implement-security.diff
@@ -202,22 +199,7 @@ parts:
       - libvorbisenc2
       - libvorbis0a
       - libusb-1.0-0
-    #   - psmisc
-
-  # wireplumber:
-  #   plugin: meson
-  #   after: [pipewire]
-  #   source: https://gitlab.freedesktop.org/pipewire/wireplumber.git
-  #   source-tag: '0.5.5'
-  #   meson-parameters:
-  #     - --prefix=/usr
-  #     - -Doptimization=3
-  #     - -Ddebug=true
-  #     - -Dintrospection=disabled
-  #     - -Ddoc=disabled
-  #     - -Ddbus-tests=false
-  #     - -Dtests=false
-  #     - -Dsystemd=enabled
+      - psmisc
 
   conditioning:
     plugin: nil
