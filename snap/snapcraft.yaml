@@ -60,7 +60,9 @@ apps:
     plugs:
       - alsa
       - bluez
+      - camera
       - hardware-observe
+      - media-control
       - network
       - network-bind
       - system-observe
@@ -76,7 +78,9 @@ apps:
     plugs:
       - alsa
       - bluez
+      - camera
       - hardware-observe
+      - media-control
       - network
       - network-bind
       - system-observe
