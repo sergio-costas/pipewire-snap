@@ -38,9 +38,8 @@ apps:
     passthrough:
       daemon-scope: user
     slots:
+      - pipewire
       - audio-playback
-      - audio-record
-      - pulseaudio
 
   pipewire-bin:
     command: usr/bin/pipewire
@@ -57,6 +56,11 @@ apps:
       - wireplumber-bin
     passthrough:
       daemon-scope: user
+    slots:
+      - pipewire
+      - audio-playback
+      - audio-record
+      - pulseaudio
     plugs:
       - alsa
       - bluez
@@ -75,6 +79,10 @@ apps:
       - pipewire-bin
     passthrough:
       daemon-scope: user
+    slots:
+      - audio-playback
+      - audio-record
+      - pulseaudio
     plugs:
       - alsa
       - bluez
@@ -95,6 +103,10 @@ apps:
       pulse-socket:
         listen-stream: $XDG_RUNTIME_DIR/pulse/native
         socket-mode: 0644
+    slots:
+      - audio-playback
+      - audio-record
+      - pulseaudio
     plugs:
       - alsa
       - bluez
