@@ -38,7 +38,8 @@ apps:
     passthrough:
       daemon-scope: user
     slots:
-      - pipewire
+# we have to wait until this is added to the store
+#      - pipewire
       - audio-playback
 
   pipewire-bin:
@@ -57,7 +58,8 @@ apps:
     passthrough:
       daemon-scope: user
     slots:
-#      - pipewire we have to wait until this is added to the store
+# we have to wait until this is added to the store
+#      - pipewire
       - audio-playback
       - audio-record
       - pulseaudio
