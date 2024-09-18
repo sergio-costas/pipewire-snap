@@ -118,10 +118,6 @@ apps:
       - system-observe
 
 slots:
-  dbus-portal:
-    interface: dbus
-    name: org.freedesktop.impl.portal.PermissionStore
-    bus: session
   dbus-wireplumber:
     interface: dbus
     name: org.freedesktop.ReserveDevice1
