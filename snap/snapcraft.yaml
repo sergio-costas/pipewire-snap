@@ -1,6 +1,6 @@
 name: pipewire
-base: core22
-version: '0.2'
+base: core24
+adopt-info: pipewire
 summary: Pipewire server, plus wireplumber and pipewire-pulse
 description: |
   The pipewire video/audio daemon server.
@@ -17,40 +17,96 @@ layout:
     bind: $SNAP/usr/share/alsa
   /usr/share/alsa-card-profile:
     bind: $SNAP/usr/share/alsa-card-profile
-  /usr/lib/$CRAFT_ARCH_TRIPLET/pipewire-0.3:
-    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/pipewire-0.3
-  /usr/lib/$CRAFT_ARCH_TRIPLET/wireplumber-0.4:
-    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/wireplumber-0.4
+  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3:
+    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3
+  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/wireplumber-0.5:
+    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/wireplumber-0.5
+  /etc/alsa:
+    bind: $SNAP/etc/alsa
+  /etc/pulse:
+    bind: $SNAP/etc/pulse
 
 environment:
   SPA_PLUGIN_DIR: $SNAP/usr/lib/x86_64-linux-gnu/spa-0.2
-  #PIPEWIRE_RUNTIME_DIR: $XDG_RUNTIME_DIR/..
-  PULSE_RUNTIME_PATH: $XDG_RUNTIME_DIR/../pulse
+  LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}/usr/lib:/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3
 
 apps:
-  pipewire:
-    command: snap/command-chain/pipewire
+  pipewire-bin:
+    command: usr/bin/pipewire
     daemon: simple
+    restart-condition: always
+    sockets:
+      pipewire-socket:
+        listen-stream: $XDG_RUNTIME_DIR/pipewire-0
+        socket-mode: 0644
+      pipewire-manager-socket:
+        listen-stream: $XDG_RUNTIME_DIR/pipewire-0-manager
+        socket-mode: 0644
+    before:
+      - wireplumber-bin
     passthrough:
       daemon-scope: user
+    slots:
+# we have to wait until this is added to the store
+#      - pipewire
+      - audio-playback
+      - audio-record
+      - pulseaudio
+    plugs:
+      - alsa
+      - bluez
+      - camera
+      - hardware-observe
+      - media-control
+      - network
+      - network-bind
+      - system-observe
 
-plugs:
-  alsa: null
-  audio-playback: null
-  audio-record: null
-  bluez: null
-  hardware-observe: null
-  network: null
-  network-bind: null
-  #pipewire-server: null
-  snapd-control: null
-  system-observe: null
+  wireplumber-bin:
+    command: usr/bin/wireplumber
+    daemon: simple
+    restart-condition: always
+    after:
+      - pipewire-bin
+    passthrough:
+      daemon-scope: user
+    slots:
+      - audio-playback
+      - audio-record
+      - pulseaudio
+    plugs:
+      - alsa
+      - bluez
+      - camera
+      - hardware-observe
+      - media-control
+      - network
+      - network-bind
+      - system-observe
+
+  pipewire-pulse:
+    command: usr/bin/pipewire-pulse
+    daemon: simple
+    restart-condition: always
+    passthrough:
+      daemon-scope: user
+    sockets:
+      pulse-socket:
+        listen-stream: $XDG_RUNTIME_DIR/pulse/native
+        socket-mode: 0644
+    slots:
+      - audio-playback
+      - audio-record
+      - pulseaudio
+    plugs:
+      - alsa
+      - bluez
+      - hardware-observe
+      - network
+      - network-bind
+      - system-observe
 
 slots:
-  dbus-portal:
-    interface: dbus
-    name: org.freedesktop.impl.portal.PermissionStore
-    bus: session
   dbus-wireplumber:
     interface: dbus
     name: org.freedesktop.ReserveDevice1
@@ -61,47 +117,11 @@ slots:
     bus: session
 
 parts:
-  ninja:
-    plugin: nil
-    source: https://github.com/ninja-build/ninja.git
-    source-tag: 'v1.11.1'
-    override-build: |
-      rm -rf build
-      rm -f ninja
-      rm -f ninja_bootstrap
-      sed -i 's_^#!/usr/bin/env python$_#!/usr/bin/env python3_g' configure.py
-      ./configure.py --bootstrap
-      mv ninja ninja_bootstrap
-      rm -rf build
-      ./ninja_bootstrap
-      rm -f ninja_bootstrap
-      mkdir -p $CRAFT_PART_INSTALL/usr/bin
-      mv ninja $CRAFT_PART_INSTALL/usr/bin/
-    build-packages:
-      - python3
-
-  meson-deps:
-    after: [ ninja ]
-    plugin: nil
-    source: https://github.com/mesonbuild/meson.git
-    source-tag: '1.0.0'
-    override-build: |
-      python3 -m pip install .
-      mkdir -p $CRAFT_PART_INSTALL/usr/lib/python3/dist-packages
-      rm -rf $CRAFT_PART_INSTALL/usr/lib/python3/dist-packages/meson*
-      python3 -m pip install --target=$CRAFT_PART_INSTALL/usr .
-      mv $CRAFT_PART_INSTALL/usr/meson* $CRAFT_PART_INSTALL/usr/lib/python3/dist-packages/
-      sed -i "s%^#!/usr/bin/python3$%#!/usr/bin/env python3%g" /usr/local/bin/meson
-      sed -i "s%^#!/usr/bin/python3$%#!/usr/bin/env python3%g" $CRAFT_PART_INSTALL/usr/bin/meson
-    build-packages:
-      - python3-pip
-      - libdbus-1-dev
-
   pipewire:
     plugin: meson
-    after: [meson-deps]
-    source: https://gitlab.freedesktop.org/pipewire/pipewire.git
-    source-tag: '0.3.66'
+    source: https://git.launchpad.net/ubuntu/+source/pipewire
+    source-branch: 'applied/ubuntu/noble-updates'
+    source-type: git
     meson-parameters:
       - --prefix=/usr
       - -Doptimization=3
@@ -111,26 +131,95 @@ parts:
       - -Dtests=disabled
       - -Dsystemd=enabled
       - -Dsnap=enabled
-    build-packages:
-      - libsdl2-dev
-      - libreadline-dev
-      - libncursesw5-dev
-      - libsndfile1-dev
-      - libpulse-dev
-      - libusb-1.0-0-dev
-      - libsystemd-dev
-      - libapparmor-dev
-      - libsnapd-glib-dev
-      - libbluetooth-dev
     override-pull: |
       craftctl default
-      patch -p1 < $CRAFT_PROJECT_DIR/patches/add-snap-support.diff
+      git_ver="$(git describe --tags --match "applied/*")"
+      git_ver="${git_ver#importer/}"
+      git_ver="${git_ver#applied/}"
+      git_ver="${git_ver%-0-g*}"
+      craftctl set version="${git_ver}"
+    build-packages:
+      - dpkg-dev
+      - debhelper-compat
+      - graphviz
+      - libapparmor-dev
+      - libasound2-dev
+      - libavahi-client-dev
+      - libbluetooth-dev
+      - libcamera-dev
+      - libdbus-1-dev
+      - libffado-dev
+      - libfreeaptx-dev
+      - libglib2.0-dev
+      - libgstreamer-plugins-base1.0-dev
+      - libgstreamer1.0-dev
+      - libjack-jackd2-dev
+      - libcanberra-dev
+      - liblc3-dev
+      - libldacbt-abr-dev
+      - libldacbt-enc-dev
+      - liblilv-dev
+      - libmysofa-dev
+      - libncurses-dev
+      - libopus-dev
+      - libpulse-dev
+      - libreadline-dev
+      - libroc-dev
+      - libsbc-dev
+      - libsdl2-dev
+      - libsnapd-glib-dev
+      - libsndfile1-dev
+      - libssl-dev
+      - libsystemd-dev
+      - libudev-dev
+      - libusb-1.0-0-dev
+      - libv4l-dev
+      - libwebrtc-audio-processing-dev
+      - libxfixes-dev
+      - meson
+      - modemmanager-dev
+      - pkgconf
+      - python3-docutils
+      - systemd-dev
     stage-packages:
-      - libgsound0
-      - libcanberra-pulse
-      - libsnapd-glib1
+      - libxfixes3
+      - libcanberra0t64
+      - libroc0.3
+      - libvorbisfile3
+      - libpulse0
+      - libffado2
+      - liblilv-0-0
+      - libavahi-client3
+      - libopusenc0
+      - libopus0
+      - libudev1
+      - libsnapd-glib-2-1
       - libbluetooth3
+      - libjson-glib-1.0-0
+      - libnghttp2-14
+      - libpsl5t64
+      - libsoup-3.0-0
+      - libwebrtc-audio-processing1
+      - libasound2t64
+      - libgstreamer-plugins-base1.0-0
+      - libmysofa1
+      - libcamera0.2
+      - libldacbt-enc2
+      - libsbc1
+      - liblc3-1
+      - libldacbt-abr2
+      - libfreeaptx0
+      - libfdk-aac2
+      - libflac12t64
+      - libmp3lame0
+      - libmpg123-0t64
+      - libogg0
+      - libsndfile1
+      - libvorbisenc2
+      - libvorbis0a
+      - libusb-1.0-0
       - psmisc
+      - bluez-alsa-utils
 
   conditioning:
     plugin: nil
