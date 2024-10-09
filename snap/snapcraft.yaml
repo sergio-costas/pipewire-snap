@@ -31,17 +31,6 @@ environment:
   LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}/usr/lib:/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3
 
 apps:
-  pipewire:
-    command: snap/command-chain/pipewire-init
-    daemon: simple
-    restart-condition: never
-    passthrough:
-      daemon-scope: user
-    slots:
-# we have to wait until this is added to the store
-#      - pipewire
-      - audio-playback
-
   pipewire-bin:
     command: usr/bin/pipewire
     daemon: simple
