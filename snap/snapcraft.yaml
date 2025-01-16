@@ -120,7 +120,7 @@ parts:
   pipewire:
     plugin: meson
     source: https://git.launchpad.net/ubuntu/+source/pipewire
-    source-branch: 'applied/ubuntu/noble-updates'
+    source-branch: 'applied/ubuntu/oracular'
     source-type: git
     meson-parameters:
       - --prefix=/usr
@@ -225,8 +225,6 @@ parts:
     plugin: nil
     after: [pipewire]
     override-prime: |
-      mkdir -p snap/command-chain
-      cp -a $CRAFT_PROJECT_DIR/scripts/* snap/command-chain/
       craftctl default
       rm -f usr/bin/meson
       rm -f usr/bin/ninja
