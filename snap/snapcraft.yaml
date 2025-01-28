@@ -221,12 +221,14 @@ parts:
       - psmisc
       - bluez-alsa-utils
 
-  conditioning:
-    plugin: nil
-    after: [pipewire]
-    override-prime: |
-      craftctl default
-      rm -f usr/bin/meson
-      rm -f usr/bin/ninja
-      rm -rf usr/lib/python3
-      rm -rf etc/pulse/client.conf.d/01-enable-autospawn.conf
+    stage:
+      - -usr/bin/meson
+      - -usr/bin/ninja
+      - -usr/lib/python3
+      - -etc/pulse/client.conf.d/01-enable-autospawn.conf
+      - -usr/share/doc
+      - -usr/share/pkgconfig
+      - -usr/share/upstart
+      - -usr/share/man
+      - -usr/share/session-migration
+      - -usr/include
