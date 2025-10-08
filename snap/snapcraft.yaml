@@ -47,8 +47,7 @@ apps:
       pipewire-manager-socket:
         listen-stream: $XDG_RUNTIME_DIR/pipewire-0-manager
         socket-mode: 0644
-    passthrough:
-      daemon-scope: user
+    daemon-scope: user
     slots: &pwslots
       - pipewire
       - audio-playback
@@ -116,80 +115,6 @@ apps:
     plugs: *pwplugs
     environment: *serverenviron
 
-  pw-play:
-    command: usr/bin/pw-play
-    slots: &pwtoolsslots
-      - pipewire
-      - audio-playback
-
-  pw-cat:
-    command: usr/bin/pw-cat
-    slots: *pwtoolsslots
-
-  pw-cli:
-    command: usr/bin/pw-cli
-    slots: *pwtoolsslots
-
-  pw-config:
-    command: usr/bin/pw-config
-    slots: *pwtoolsslots
-
-  pw-dot:
-    command: usr/bin/pw-dot
-    slots: *pwtoolsslots
-
-  pw-dsdplay:
-    command: usr/bin/pw-dsdplay
-    slots: *pwtoolsslots
-
-  pw-dump:
-    command: usr/bin/pw-dump
-    slots: *pwtoolsslots
-
-  pw-encplay:
-    command: usr/bin/pw-encplay
-    slots: *pwtoolsslots
-
-  pw-link:
-    command: usr/bin/pw-link
-    slots: *pwtoolsslots
-
-  pw-loopback:
-    command: usr/bin/pw-loopback
-    slots: *pwtoolsslots
-
-  pw-metadata:
-    command: usr/bin/pw-metadata
-    slots: *pwtoolsslots
-
-  pw-mididump:
-    command: usr/bin/pw-mididump
-    slots: *pwtoolsslots
-
-  pw-midiplay:
-    command: usr/bin/pw-midiplay
-    slots: *pwtoolsslots
-
-  pw-midirecord:
-    command: usr/bin/pw-midirecord
-    slots: *pwtoolsslots
-
-  pw-mon:
-    command: usr/bin/pw-mon
-    slots: *pwtoolsslots
-
-  pw-profiler:
-    command: usr/bin/pw-profiler
-    slots: *pwtoolsslots
-
-  pw-record:
-    command: usr/bin/pw-record
-    slots: *pwtoolsslots
-
-  pw-top:
-    command: usr/bin/pw-top
-    slots: *pwtoolsslots
-
 slots:
   dbus-wireplumber:
     interface: dbus
@@ -244,8 +169,9 @@ slots:
 parts:
   pipewire:
     plugin: meson
-    source: https://git.launchpad.net/ubuntu/+source/pipewire
-    source-branch: 'applied/ubuntu/oracular'
+    source: https://gitlab.freedesktop.org/pipewire/pipewire.git
+    source-depth: 1
+    source-tag: "1.4.8"
     source-type: git
     meson-parameters:
       - --prefix=/usr
@@ -260,10 +186,8 @@ parts:
       - -Dsystemd-system-service=enabled
     override-pull: |
       craftctl default
-      git_ver="$(git describe --tags --match "applied/*")"
-      git_ver="${git_ver#importer/}"
-      git_ver="${git_ver#applied/}"
-      git_ver="${git_ver%-0-g*}"
+      git_ver="$(git describe --tags)"
+      echo $git_ver
       craftctl set version="${git_ver}"
       patch -p1 < $CRAFT_PROJECT_DIR/patches/launch-wireplumber.diff
     build-packages:
@@ -349,8 +273,6 @@ parts:
       - psmisc
       - bluez-alsa-utils
       - yaru-theme-sound
-      - pulseaudio-utils
-      - alsa-utils
 
     stage:
       - -usr/bin/meson
