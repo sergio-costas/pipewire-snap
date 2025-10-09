@@ -88,6 +88,14 @@ apps:
     slots: *pwslots
     plugs: *pwplugs
 
+  init-pipewire:
+    command: scripts/init-pipewire.sh
+    daemon: simple
+    restart-condition: never
+    daemon-scope: user
+    slots: *pwslots
+    plugs: *pwplugs
+
 # apps for server-wide daemon
   pipewire-server-bin:
     command: usr/bin/pipewire
@@ -274,6 +282,10 @@ parts:
       - bluez-alsa-utils
       - yaru-theme-sound
 
+    override-stage: |
+      cp -a $CRAFT_PROJECT_DIR/scripts $CRAFT_PRIME/
+      chmod 755 $CRAFT_PRIME/scripts/*
+      craftctl default
     stage:
       - -usr/bin/meson
       - -usr/bin/ninja
